@@ -1,0 +1,351 @@
+@import './tokens.css';
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  /* hidden объявлен первым как запасной: он один всё ещё позволяет
+     скриптам утащить страницу вбок, clip не позволяет. */
+  overflow-x: hidden;
+  overflow-x: clip;
+}
+
+html {
+  scroll-behavior: smooth;
+  /* Якорная навигация не должна заводить секцию под шапку */
+  scroll-padding-top: 6rem;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--canvas);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  line-height: 1.6;
+  font-synthesis-weight: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+img,
+video,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+/*
+ * Атрибуты width и height у картинок нужны, чтобы браузер заранее занял
+ * место и страница не прыгала. Но без height:auto он понимает их буквально,
+ * и картинка с width:1600 height:900 растягивается на 900 пикселей вверх.
+ * Компоненты, которым нужна своя высота, переопределяют это правило.
+ */
+img {
+  height: auto;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+h1,
+h2,
+h3,
+p,
+figure,
+blockquote {
+  margin: 0;
+}
+
+ul,
+ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+::selection {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* ---------- Служебное ---------- */
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 100;
+  padding: var(--space-2) var(--space-3);
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: var(--fs-mono);
+  letter-spacing: 0.08em;
+  transform: translateY(-120%);
+  transition: transform var(--dur) var(--ease-out);
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
+}
+
+/*
+ * Полоса под левый индикатор секций.
+ *
+ * Условие совпадает с тем, при котором индикатор виден. Без этого запаса
+ * номера секций оказываются прямо под крупными заголовками и не читаются
+ * ни они, ни заголовок.
+ */
+@media (min-width: 1025px) and (pointer: fine) {
+  :root {
+    --gutter: clamp(8rem, 2rem + 6vw, 10.5rem);
+  }
+}
+
+/* ---------- Каркас секций ---------- */
+
+/*
+ * Секции лежат поверх фильма, поэтому фон у них почти прозрачный: кадр
+ * просвечивает сильно, держится только лёгкий тёмный тон (около 10%),
+ * чтобы текст не терялся на самых светлых кусках видео.
+ */
+.section {
+  position: relative;
+  z-index: var(--z-content);
+  background: rgba(8, 8, 8, 0.1);
+  padding-block: clamp(5rem, 3rem + 9vw, 10rem);
+  padding-inline: var(--gutter);
+}
+
+.section--alt {
+  background: rgba(16, 16, 16, 0.14);
+}
+
+/* Секция, сквозь которую фильм виден целиком. */
+.section--open {
+  background: transparent;
+}
+
+.section__inner {
+  max-width: var(--container);
+  margin-inline: auto;
+}
+
+/* Номер секции + красная линия: общий приём всей страницы */
+.section__kicker {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-mono);
+  letter-spacing: 0.22em;
+  color: var(--accent);
+  text-shadow: 0 1px 3px rgba(4, 4, 4, 0.95), 0 4px 14px rgba(4, 4, 4, 0.8);
+  margin-bottom: var(--space-3);
+}
+
+.section__kicker::after {
+  content: '';
+  flex: 0 0 auto;
+  width: clamp(2.5rem, 6vw, 6rem);
+  height: 1px;
+  background: var(--accent);
+  transform-origin: left center;
+  transform: scaleX(var(--line-scale, 0));
+  transition: transform var(--dur-slow) var(--ease-out) 120ms;
+}
+
+.in .section__kicker::after {
+  --line-scale: 1;
+}
+
+.section__title {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: var(--fs-h2);
+  line-height: 0.92;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+  text-wrap: balance;
+  /* Панели под секциями почти прозрачные, текст сидит прямо на видео. */
+  text-shadow: var(--tshadow);
+}
+
+/* Обёртки для лёгкого параллакса. Сдвиг живёт на них, а появление —
+   на вложенном .r-item: две трансформации на одном элементе гасят
+   друг друга. */
+.services__lead-drift,
+.tcar__lead-drift,
+.compare__lead-drift,
+.tcar__figure-drift {
+  display: block;
+}
+
+.section__lead {
+  max-width: var(--measure);
+  color: var(--text-secondary);
+  font-size: var(--fs-lead);
+  line-height: 1.5;
+  text-shadow: var(--tshadow);
+}
+
+.accent {
+  color: var(--accent);
+}
+
+/* ---------- Проявление при входе в экран ---------- */
+
+/* Начальные и конечные состояния всегда префиксуются контейнером,
+   иначе более позднее правило молча отменит анимацию. */
+.reveal .r-item {
+  opacity: 0;
+  transform: translateY(26px);
+  transition: opacity var(--dur-slow) var(--ease-out),
+    transform var(--dur-slow) var(--ease-out);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+
+.reveal.in .r-item {
+  opacity: 1;
+  transform: none;
+}
+
+/* Задержки снимаются после входа, иначе каждый hover на соседних
+   элементах потом тормозит ровно на величину стаггера. */
+.reveal.in.revealed .r-item {
+  transition-delay: 0ms;
+}
+
+/* ---------- Кнопки ---------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  font-family: var(--font-mono);
+  font-size: var(--fs-mono);
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  white-space: nowrap;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: background-color var(--dur) var(--ease-out),
+    color var(--dur) var(--ease-out), border-color var(--dur) var(--ease-out),
+    box-shadow var(--dur) var(--ease-out), transform var(--dur-fast) var(--ease-out);
+}
+
+.btn--primary {
+  background: var(--accent);
+  color: #fff;
+  border: 1px solid var(--accent);
+  box-shadow: 0 0 0 rgba(255, 43, 26, 0);
+}
+
+.btn--primary:hover,
+.btn--primary:focus-visible {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+  box-shadow: 0 6px 30px var(--accent-glow);
+}
+
+.btn--primary:active {
+  transform: translateY(1px);
+}
+
+.btn--ghost {
+  background: transparent;
+  color: var(--text-primary);
+  border: 1px solid var(--hairline-strong);
+}
+
+.btn--ghost:hover,
+.btn--ghost:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ---------- Пауза анимаций на скрытой вкладке ---------- */
+
+/* animation-play-state не наследуется, поэтому правило обязано
+   доставать до вложенных элементов и псевдоэлементов. */
+body.is-hidden *,
+body.is-hidden *::before,
+body.is-hidden *::after {
+  animation-play-state: paused !important;
+}
+
+/* ---------- Крупные касания ---------- */
+
+@media (pointer: coarse) {
+  .btn {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+/* ---------- Уважение к prefers-reduced-motion ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    transition-delay: 0ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Конечные состояния показываются, функциональность не теряется */
+  .reveal .r-item {
+    opacity: 1;
+    transform: none;
+  }
+
+  .section__kicker::after {
+    --line-scale: 1;
+  }
+}

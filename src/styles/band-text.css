@@ -1,0 +1,102 @@
+/*
+ * Сборка текста поверх видео.
+ *
+ * Все входы работают только на transform и opacity, все привязаны к --k
+ * (прогресс сборки полосы, 0..1), и все обратимы: прокрутка вверх
+ * разбирает текст обратно.
+ */
+
+.band-text {
+  display: block;
+}
+
+.band-text__line {
+  display: block;
+}
+
+.band-text__line--accent {
+  color: var(--accent);
+}
+
+.band-text__word {
+  display: inline-block;
+  white-space: pre;
+}
+
+.band-text__char {
+  display: inline-block;
+}
+
+/* Слова поднимаются в порядке чтения. Первый экран, кадр приходит в движение. */
+.band-text--rise .band-text__word {
+  --kc: clamp(0, (var(--k, 0) - var(--th, 0)) * 2.8, 1);
+  opacity: var(--kc);
+  transform: translateY(calc((1 - var(--kc)) * 34px));
+}
+
+/* Слова оседают сверху вниз, пока от машины отходит колесо. */
+.band-text--drift .band-text__word {
+  --kc: clamp(0, (var(--k, 0) - var(--th, 0)) * 2.8, 1);
+  opacity: var(--kc);
+  transform: translateY(calc((1 - var(--kc)) * -28px));
+}
+
+/* Строка приближается вместе с камерой. */
+.band-text--depth {
+  opacity: clamp(0, var(--k, 0) * 1.7, 1);
+  transform: scale(calc(0.84 + 0.16 * clamp(0, var(--k, 0) * 1.4, 1)));
+  transform-origin: left center;
+}
+
+/* Половины расходятся, пока открывается капот. */
+.band-text--part .band-text__word {
+  --kc: clamp(0, (var(--k, 0) - var(--th, 0)) * 2.6, 1);
+  opacity: var(--kc);
+  transform: translateX(calc((1 - var(--kc)) * var(--jx, 0px)));
+}
+
+/* Буквы слетаются, пока машина разлетается на детали. */
+.band-text--scatter .band-text__char {
+  --kc: clamp(0, (var(--k, 0) - var(--th, 0)) * 2.6, 1);
+  opacity: var(--kc);
+  transform: translate(
+      calc((1 - var(--kc)) * var(--jx, 0px)),
+      calc((1 - var(--kc)) * var(--jy, 0px))
+    )
+    rotate(calc((1 - var(--kc)) * var(--jr, 0deg)));
+}
+
+/* Резкость приходит вместе с фокусом на двигателе. */
+.band-text__stack {
+  display: grid;
+}
+
+.band-text__stack > * {
+  grid-area: 1 / 1;
+}
+
+.band-text__soft {
+  filter: blur(11px);
+  opacity: calc(1 - clamp(0, var(--k, 0) * 1.5, 1));
+}
+
+.band-text__sharp {
+  opacity: clamp(0, var(--k, 0) * 1.5, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .band-text__word,
+  .band-text__char,
+  .band-text--depth {
+    opacity: 1;
+    transform: none;
+  }
+
+  .band-text__soft {
+    display: none;
+  }
+
+  .band-text__sharp {
+    opacity: 1;
+  }
+}

@@ -1,0 +1,42 @@
+.lines {
+  display: block;
+}
+
+/*
+ * Маска строки. Запас снизу задан в долях кегля и тут же вычитается
+ * отрицательным полем: без него обрезка съедает хвосты у «у», «р», «д»,
+ * а с обычным padding строка разъезжается по вертикали.
+ */
+.lines__mask {
+  display: block;
+  overflow: hidden;
+  padding-bottom: 0.14em;
+  margin-bottom: -0.14em;
+}
+
+.lines__inner {
+  display: block;
+  transform: translateY(112%);
+  transition: transform 900ms var(--ease-out);
+  transition-delay: calc(var(--lines-delay, 0ms) + var(--i, 0) * 95ms);
+}
+
+.lines__inner--accent {
+  color: var(--accent);
+}
+
+.reveal.in .lines__inner {
+  transform: translateY(0);
+}
+
+/* Задержки снимаются после входа, иначе они мешают наведению. */
+.reveal.in.revealed .lines__inner {
+  transition-delay: 0ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lines__inner {
+    transform: none;
+    transition: none;
+  }
+}

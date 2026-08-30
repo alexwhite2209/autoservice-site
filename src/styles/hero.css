@@ -1,0 +1,163 @@
+/*
+ * Первый экран.
+ *
+ * Своего видео у него больше нет: фильм лежит под всей страницей
+ * отдельным закреплённым слоем. Здесь только слоган поверх кадра.
+ */
+
+.hero {
+  position: relative;
+  z-index: var(--z-content);
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  padding-top: 8rem;
+  padding-bottom: 8rem;
+  padding-inline: var(--gutter);
+}
+
+.hero__inner {
+  position: relative;
+  width: 100%;
+  /* Ширина подобрана так, чтобы «ПРОБЛЕМУ,» оставалось в притенённой
+     левой части кадра и не выезжало на светлый кузов. */
+  max-width: min(72rem, 76vw);
+}
+
+/* Широкое и очень мягкое пятно под слоганом: читается как часть общей
+   кинематографичной коррекции, а не как плашка под текстом. */
+.hero__inner::before {
+  content: '';
+  position: absolute;
+  inset: -16% -10% -18% -16%;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 60% 62% at 36% 50%,
+    rgba(4, 4, 4, 0.72) 0%,
+    rgba(4, 4, 4, 0.44) 46%,
+    rgba(4, 4, 4, 0) 76%
+  );
+}
+
+.hero__title {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: var(--fs-hero);
+  line-height: 0.88;
+  letter-spacing: -0.035em;
+  text-transform: uppercase;
+  margin: 0;
+  text-shadow: var(--tshadow);
+}
+
+.hero__subtitle {
+  margin-top: var(--space-3);
+  font-family: var(--font-body);
+  font-size: var(--fs-lead);
+  line-height: 1.45;
+  color: rgba(242, 242, 242, 0.9);
+  max-width: 34ch;
+  text-shadow: var(--tshadow);
+}
+
+.hero__cta {
+  margin-top: var(--space-4);
+  /* Тень на кнопке читается как грязь, поэтому её там нет. */
+  text-shadow: none;
+}
+
+/*
+ * Слоган собирается сам на загрузке: на первом экране прокручивать
+ * ещё нечего, и ждать скролла, чтобы увидеть слова, бессмысленно.
+ */
+.hero__inner {
+  --k: 0;
+  transition: --k 1100ms var(--ease-out) 120ms;
+}
+
+.hero__inner.in {
+  --k: 1;
+}
+
+/* ---------- подсказка о прокрутке ---------- */
+
+.hero__cue {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(2rem, 5vh, 3.5rem);
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  font-family: var(--font-mono);
+  font-size: var(--fs-mono);
+  letter-spacing: 0.24em;
+  color: var(--text-secondary);
+  text-shadow: 0 1px 4px rgba(4, 4, 4, 0.9);
+  transition: color var(--dur) var(--ease-out);
+}
+
+.hero__cue:hover,
+.hero__cue:focus-visible {
+  color: var(--text-primary);
+}
+
+.hero__cue-mouse {
+  width: 24px;
+  height: 38px;
+  border: 1px solid var(--hairline-strong);
+  border-radius: 12px;
+  display: flex;
+  justify-content: center;
+  padding-top: 6px;
+}
+
+.hero__cue-wheel {
+  width: 2px;
+  height: 7px;
+  border-radius: 1px;
+  background: var(--accent);
+  animation: cue-wheel 2.4s var(--ease-in-out) -0.6s infinite;
+}
+
+@keyframes cue-wheel {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  55% {
+    transform: translateY(10px);
+    opacity: 0.15;
+  }
+}
+
+@media (max-height: 620px) {
+  .hero__cue {
+    display: none;
+  }
+}
+
+@media (max-width: 720px) {
+  .hero__subtitle {
+    max-width: 28ch;
+  }
+
+  .hero__inner {
+    max-width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero__cue-wheel {
+    animation: none;
+  }
+
+  .hero__inner {
+    --k: 1;
+    transition: none;
+  }
+}

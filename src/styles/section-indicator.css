@@ -1,0 +1,112 @@
+.indicator {
+  position: fixed;
+  left: clamp(1rem, 2.2vw, 2.25rem);
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: var(--z-indicator);
+}
+
+.indicator__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  counter-reset: none;
+}
+
+.indicator__item {
+  position: relative;
+}
+
+/* Тонкая линия связывает номера в один столбец. */
+.indicator__item:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 100%;
+  width: 1px;
+  height: 0.75rem;
+  background: var(--hairline);
+}
+
+.indicator__link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-block: 0.375rem;
+  font-family: var(--font-mono);
+  font-size: var(--fs-mono);
+  letter-spacing: 0.14em;
+  color: var(--text-secondary);
+  transition: color var(--dur) var(--ease-out);
+}
+
+.indicator__dot {
+  position: relative;
+  flex: 0 0 auto;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  border: 1px solid var(--hairline-strong);
+  background: transparent;
+  transition: background-color var(--dur) var(--ease-out),
+    border-color var(--dur) var(--ease-out), transform var(--dur) var(--ease-out);
+}
+
+.indicator__dot::after {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+  box-shadow: 0 0 14px 3px var(--accent);
+  opacity: 0;
+  transition: opacity var(--dur) var(--ease-out);
+}
+
+.indicator__num {
+  min-width: 1.5rem;
+  opacity: 0.55;
+  transition: opacity var(--dur) var(--ease-out),
+    transform var(--dur) var(--ease-out);
+}
+
+.indicator__link:hover,
+.indicator__link:focus-visible {
+  color: var(--text-primary);
+}
+
+.indicator__link:hover .indicator__num,
+.indicator__link:focus-visible .indicator__num {
+  opacity: 1;
+}
+
+.indicator__link.is-active {
+  color: var(--accent);
+}
+
+.indicator__link.is-active .indicator__dot {
+  background: var(--accent);
+  border-color: var(--accent);
+  transform: scale(1.15);
+}
+
+.indicator__link.is-active .indicator__dot::after {
+  opacity: 0.5;
+}
+
+.indicator__link.is-active .indicator__num {
+  opacity: 1;
+  transform: translateX(2px);
+}
+
+/* На телефонах указатель скрыт. */
+@media (max-width: 1024px), (pointer: coarse) {
+  .indicator {
+    display: none;
+  }
+}
+
+@media (max-height: 560px) {
+  .indicator {
+    display: none;
+  }
+}

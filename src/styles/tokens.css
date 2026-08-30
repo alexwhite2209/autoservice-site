@@ -1,0 +1,74 @@
+/* Дизайн-токены. Ни один компонент не пишет сырой hex. */
+
+:root {
+  /* Палитра из брифа */
+  --canvas: #080808;
+  --canvas-2: #101010;
+  --panel: #151515;
+  --text-primary: #f2f2f2;
+  --text-secondary: #a0a0a0;
+  --accent: #ff2b1a;
+  --accent-hover: #ff4433;
+
+  /* Красный шёпотом: свечения и границы */
+  --accent-glow: rgba(255, 43, 26, 0.16);
+  --accent-glow-soft: rgba(255, 43, 26, 0.08);
+  --accent-line: rgba(255, 43, 26, 0.42);
+
+  /* Границы. Слабая — для декора, сильная — для интерактива (3:1) */
+  --hairline: rgba(242, 242, 242, 0.1);
+  --hairline-strong: rgba(242, 242, 242, 0.24);
+
+  /* Шрифты */
+  --font-display: 'Onest', system-ui, -apple-system, sans-serif;
+  --font-body: 'Golos Text', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Code', monospace;
+
+  /* Шкала кегля */
+  --fs-mono: clamp(0.6875rem, 0.66rem + 0.14vw, 0.8125rem);
+  --fs-body: clamp(1rem, 0.96rem + 0.2vw, 1.125rem);
+  --fs-lead: clamp(1.125rem, 1rem + 0.6vw, 1.5rem);
+  --fs-h3: clamp(1.5rem, 1.2rem + 1.4vw, 2.25rem);
+  --fs-h2: clamp(2.5rem, 1.6rem + 4.2vw, 6rem);
+  /* Кегль подобран так, чтобы самое широкое слово первого экрана
+     («ПРОБЛЕМУ,») укладывалось в левую, притенённую часть кадра и не
+     выезжало на светлый кузов. */
+  --fs-hero: clamp(2.75rem, 1rem + 5.4vw, 7rem);
+  --fs-phone: clamp(2rem, 0.9rem + 5.2vw, 5.5rem);
+
+  /* Ритм отступов, шаг 8 */
+  --space-1: 0.5rem;
+  --space-2: 1rem;
+  --space-3: 1.5rem;
+  --space-4: 2rem;
+  --space-5: 3rem;
+  --space-6: 4rem;
+  --space-7: 6rem;
+  --space-8: 8rem;
+
+  --gutter: clamp(1.25rem, 0.6rem + 3vw, 5rem);
+  --measure: 62ch;
+  --container: 90rem;
+
+  /* Движение. Два токена на весь сайт, чтобы ритм был единым. */
+  --ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0.05, 0.36, 1);
+  --dur-fast: 180ms;
+  --dur: 320ms;
+  --dur-slow: 640ms;
+
+  /* Слои */
+  --z-bg: 0;
+  --z-content: 10;
+  --z-overlay: 20;
+  --z-indicator: 30;
+  --z-header: 50;
+
+  /*
+   * Тень текста поверх видео: плотный край, ореол, широкий спад.
+   * Затемняет пиксели вплотную к буквам и не трогает остальной кадр —
+   * именно поэтому под надписями не приходится гасить видео.
+   */
+  --tshadow: 0 1px 2px rgba(4, 4, 4, 1), 0 2px 5px rgba(4, 4, 4, 0.96),
+    0 4px 16px rgba(4, 4, 4, 0.88), 0 10px 44px rgba(4, 4, 4, 0.7);
+}

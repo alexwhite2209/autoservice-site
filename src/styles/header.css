@@ -1,0 +1,116 @@
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: var(--z-header);
+  padding-block: clamp(1rem, 2vw, 1.75rem);
+  padding-inline: var(--gutter);
+  background: transparent;
+  border-bottom: 1px solid transparent;
+  transition: padding-block var(--dur) var(--ease-out),
+    background-color var(--dur) var(--ease-out),
+    border-color var(--dur) var(--ease-out),
+    backdrop-filter var(--dur) var(--ease-out);
+}
+
+/* После прокрутки шапка садится, темнеет и слегка размывает фон под собой. */
+.header.is-compact {
+  padding-block: 0.625rem;
+  background: rgba(8, 8, 8, 0.72);
+  border-bottom-color: var(--hairline);
+  backdrop-filter: blur(14px) saturate(120%);
+}
+
+.header__inner {
+  max-width: var(--container);
+  margin-inline: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.header__logo {
+  flex: 0 0 auto;
+  display: inline-flex;
+}
+
+.header__nav {
+  margin-left: auto;
+}
+
+.header__nav-list {
+  display: flex;
+  align-items: center;
+  gap: clamp(1.25rem, 2.4vw, 2.5rem);
+}
+
+.header__nav-link {
+  position: relative;
+  font-family: var(--font-mono);
+  font-size: var(--fs-mono);
+  letter-spacing: 0.18em;
+  color: var(--text-secondary);
+  padding-block: 0.5rem;
+  transition: color var(--dur) var(--ease-out);
+}
+
+.header__nav-link::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0.125rem;
+  height: 1px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: right center;
+  transition: transform var(--dur) var(--ease-out);
+}
+
+.header__nav-link:hover,
+.header__nav-link:focus-visible {
+  color: var(--text-primary);
+}
+
+.header__nav-link:hover::after,
+.header__nav-link:focus-visible::after {
+  transform: scaleX(1);
+  transform-origin: left center;
+}
+
+.header__contact {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.75rem, 1.6vw, 1.5rem);
+}
+
+.header__phone {
+  font-family: var(--font-mono);
+  font-size: var(--fs-mono);
+  letter-spacing: 0.06em;
+  color: var(--text-primary);
+  white-space: nowrap;
+  transition: color var(--dur) var(--ease-out);
+}
+
+.header__phone:hover,
+.header__phone:focus-visible {
+  color: var(--accent);
+}
+
+@media (max-width: 1080px) {
+  .header__nav {
+    display: none;
+  }
+
+  .header__contact {
+    margin-left: auto;
+  }
+}
+
+@media (max-width: 560px) {
+  .header__phone {
+    display: none;
+  }
+}

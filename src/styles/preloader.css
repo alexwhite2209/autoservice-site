@@ -1,0 +1,143 @@
+/*
+ * Заставка перед сайтом.
+ *
+ * Машина разгоняется справа к центру, из-под колёс летит дым, затем на её
+ * месте проявляется знак и по нему проходит перелив.
+ */
+
+.preloader {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(
+      ellipse 90% 80% at 50% 55%,
+      #101010 0%,
+      var(--canvas) 62%,
+      #050505 100%
+    );
+}
+
+.preloader__stage {
+  position: relative;
+  width: min(46rem, 82vw);
+  aspect-ratio: 16 / 7;
+  display: grid;
+  place-items: center;
+}
+
+/* ---------- дорожка ---------- */
+
+.preloader__road {
+  position: absolute;
+  left: -6%;
+  right: -6%;
+  bottom: 22%;
+  height: 1px;
+  transform-origin: right center;
+  background: linear-gradient(
+    to right,
+    rgba(255, 43, 26, 0) 0%,
+    rgba(255, 43, 26, 0.55) 35%,
+    rgba(255, 43, 26, 0.9) 70%,
+    rgba(255, 43, 26, 0) 100%
+  );
+  box-shadow: 0 0 18px var(--accent-glow);
+}
+
+/* ---------- дым ---------- */
+
+.preloader__smoke {
+  position: absolute;
+  /* Точка отсчёта — под задним колесом машины, оттуда и идёт след. */
+  left: 44%;
+  bottom: 21%;
+  width: 1px;
+  height: 1px;
+}
+
+.preloader__puff {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: clamp(1.75rem, 4vw, 3rem);
+  height: clamp(1.75rem, 4vw, 3rem);
+  margin-left: -50%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(198, 198, 204, 0.42) 0%,
+    rgba(160, 160, 168, 0.2) 46%,
+    rgba(130, 130, 140, 0) 74%
+  );
+}
+
+/* ---------- машина ---------- */
+
+.preloader__car {
+  position: absolute;
+  width: min(30rem, 62%);
+  height: auto;
+  bottom: 20%;
+  filter: drop-shadow(0 0 26px rgba(255, 43, 26, 0.35));
+}
+
+/* ---------- знак ---------- */
+
+.preloader__logo-wrap {
+  position: absolute;
+  width: min(30rem, 74%);
+  /* Обрезка нужна перелива ради: блик не должен выезжать за знак. */
+  overflow: hidden;
+}
+
+.preloader__logo {
+  width: 100%;
+  height: auto;
+  opacity: 0;
+}
+
+.preloader__sheen {
+  position: absolute;
+  inset: -30% -12%;
+  pointer-events: none;
+  background: linear-gradient(
+    104deg,
+    rgba(255, 255, 255, 0) 38%,
+    rgba(255, 255, 255, 0.42) 50%,
+    rgba(255, 255, 255, 0) 62%
+  );
+  /* Перелив светится только там, где есть сам знак. */
+  mix-blend-mode: overlay;
+}
+
+/* ---------- пропустить ---------- */
+
+.preloader__skip {
+  position: absolute;
+  right: clamp(1.25rem, 4vw, 3rem);
+  bottom: clamp(1.25rem, 4vw, 3rem);
+  padding: 0.625rem 1rem;
+  font-family: var(--font-mono);
+  font-size: var(--fs-mono);
+  letter-spacing: 0.2em;
+  color: var(--text-secondary);
+  border: 1px solid var(--hairline);
+  border-radius: 2px;
+  transition: color var(--dur) var(--ease-out),
+    border-color var(--dur) var(--ease-out);
+}
+
+.preloader__skip:hover,
+.preloader__skip:focus-visible {
+  color: var(--text-primary);
+  border-color: var(--accent);
+}
+
+@media (pointer: coarse) {
+  .preloader__skip {
+    min-height: 44px;
+  }
+}

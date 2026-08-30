@@ -1,0 +1,85 @@
+.footer {
+  position: relative;
+  z-index: var(--z-content);
+  /* Подвал закрывает фильм полностью: страница должна на чём-то закончиться. */
+  background: var(--canvas-2);
+  border-top: 1px solid var(--hairline);
+  isolation: isolate;
+  padding-block: clamp(3rem, 6vw, 5rem);
+  padding-inline: var(--gutter);
+}
+
+.footer__inner {
+  max-width: var(--container);
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: start;
+  gap: clamp(1.5rem, 4vw, 4rem);
+}
+
+.footer__brand {
+  display: flex;
+}
+
+.footer__nav-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(1rem, 2.4vw, 2.25rem);
+}
+
+.footer__link {
+  font-family: var(--font-mono);
+  font-size: var(--fs-mono);
+  letter-spacing: 0.18em;
+  color: var(--text-secondary);
+  transition: color var(--dur) var(--ease-out);
+}
+
+.footer__link:hover,
+.footer__link:focus-visible {
+  color: var(--accent);
+}
+
+.footer__address {
+  display: grid;
+  gap: 0.25rem;
+  font-style: normal;
+  text-align: right;
+  color: var(--text-secondary);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+.footer__phone {
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+  margin-top: 0.375rem;
+  transition: color var(--dur) var(--ease-out);
+}
+
+.footer__phone:hover,
+.footer__phone:focus-visible {
+  color: var(--accent);
+}
+
+.footer__copy {
+  grid-column: 1 / -1;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--hairline);
+  font-family: var(--font-mono);
+  font-size: var(--fs-mono);
+  letter-spacing: 0.14em;
+  color: var(--text-secondary);
+}
+
+@media (max-width: 900px) {
+  .footer__inner {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+  }
+
+  .footer__address {
+    text-align: left;
+  }
+}

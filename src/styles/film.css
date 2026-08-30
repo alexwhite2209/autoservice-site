@@ -1,0 +1,260 @@
+/*
+ * Фильм под всей страницей и окна, в которых он виден целиком.
+ */
+
+/*
+ * Прогресс сборки текста. Обычные custom properties не умеют
+ * анимироваться, поэтому свойство объявлено типизированным: только так
+ * переход от 0 к 1 идёт плавно, а не рывком. Там, где @property не
+ * поддерживается, текст просто появляется без сборки.
+ */
+@property --k {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+
+.film {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-bg);
+  overflow: hidden;
+  background: var(--canvas);
+  pointer-events: none;
+}
+
+.film__poster,
+.film__video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.film__poster {
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.film__video {
+  object-fit: cover;
+  opacity: 0;
+  /* Собственный слой композитора: перерисовки видео не тянут за собой
+     остальную страницу. */
+  will-change: transform;
+  transform: translateZ(0);
+  transition: opacity 600ms var(--ease-out);
+}
+
+.film.is-video-ready .film__video {
+  opacity: 1;
+}
+
+.film.is-video-failed .film__video {
+  display: none;
+}
+
+/*
+ * Постоянная цветокоррекция кадра. Одинаковая на всём фильме и не зависит
+ * от того, есть на экране текст или нет: под надписями ничего не «моргает»
+ * затемнением, а читаемость букв держится их собственной тенью.
+ */
+.film__grade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+      95deg,
+      rgba(4, 4, 4, 0.74) 0%,
+      rgba(4, 4, 4, 0.5) 24%,
+      rgba(4, 4, 4, 0.22) 46%,
+      rgba(4, 4, 4, 0) 66%
+    ),
+    radial-gradient(
+      ellipse 126% 98% at 58% 45%,
+      rgba(4, 4, 4, 0) 32%,
+      rgba(4, 4, 4, 0.54) 100%
+    );
+}
+
+/* ---------- кольцо загрузки и полоса прогресса ---------- */
+
+.film__ring {
+  position: absolute;
+  right: clamp(1.5rem, 3vw, 3rem);
+  bottom: clamp(1.5rem, 3vw, 3rem);
+  width: 44px;
+  height: 44px;
+  opacity: 1;
+  transition: opacity 400ms var(--ease-out);
+}
+
+.film__ring-track {
+  stroke: rgba(242, 242, 242, 0.14);
+}
+
+.film__ring-arc {
+  stroke: var(--accent);
+  stroke-linecap: round;
+  stroke-dashoffset: var(--ring-offset, 126);
+  transform: rotate(-90deg);
+  transform-origin: center;
+  transition: stroke-dashoffset 140ms linear;
+}
+
+.film.is-video-ready .film__ring,
+.film.is-video-failed .film__ring {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.film__progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: rgba(242, 242, 242, 0.08);
+}
+
+.film__progress-bar {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  transform-origin: left center;
+  transform: scaleX(0);
+  box-shadow: 0 0 16px var(--accent-glow);
+}
+
+/* ---------- окна между секциями ---------- */
+
+.window {
+  position: relative;
+  z-index: var(--z-content);
+  min-height: 84vh;
+  display: flex;
+  padding-top: 8rem;
+  padding-bottom: 6rem;
+  padding-left: var(--gutter);
+  padding-right: clamp(1.5rem, 4vw, 5rem);
+}
+
+/* Углы намеренно разные: взгляд не залипает в одной точке экрана. */
+.window--top-left {
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+.window--top-right {
+  align-items: flex-start;
+  justify-content: flex-end;
+  text-align: right;
+}
+
+.window--bottom-left {
+  align-items: flex-end;
+  justify-content: flex-start;
+}
+
+.window--bottom-right {
+  align-items: flex-end;
+  justify-content: flex-end;
+  text-align: right;
+  /* Ниже правого угла живёт кольцо загрузки. */
+  padding-bottom: 8rem;
+}
+
+.window__inner {
+  max-width: min(34rem, 66vw);
+}
+
+/*
+ * Тень намеренно плотная и короткая: она затемняет только пиксели вокруг
+ * самих букв и не трогает кадр вокруг. Так надпись читается, а видео
+ * остаётся видимым целиком.
+ */
+.window__caption {
+  --k: 0;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(1.125rem, 0.85rem + 0.85vw, 1.75rem);
+  letter-spacing: 0.16em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  text-shadow: 0 1px 2px rgba(4, 4, 4, 1), 0 2px 6px rgba(4, 4, 4, 0.96),
+    0 4px 18px rgba(4, 4, 4, 0.88);
+  transition: opacity var(--dur-slow) var(--ease-out),
+    transform var(--dur-slow) var(--ease-out), --k 900ms var(--ease-out);
+}
+
+/*
+ * Мягкое пятно тени вокруг самой надписи.
+ *
+ * Это не подложка на пол-экрана: пятно чуть больше строки и полностью
+ * гаснет к своим краям. Правая половина кадра постоянной коррекцией не
+ * тронута, и без этого пятна реплики в правых углах ложились прямо на
+ * блики металла и переставали читаться.
+ */
+.window__caption::before {
+  content: '';
+  position: absolute;
+  inset: -1.15em -2.4em;
+  z-index: -1;
+  pointer-events: none;
+  /*
+   * Радиусы намеренно во всю ширину пятна, а спад отодвинут к самому краю.
+   * При маленьких радиусах затемнение гасло уже к концам строки, и
+   * последние буквы ложились на светлый пол без всякой защиты.
+   */
+  background: radial-gradient(
+    ellipse 100% 118% at 50% 50%,
+    rgba(4, 4, 4, 0.88) 0%,
+    rgba(4, 4, 4, 0.8) 48%,
+    rgba(4, 4, 4, 0.48) 74%,
+    rgba(4, 4, 4, 0) 100%
+  );
+}
+
+.reveal.in .window__caption {
+  --k: 1;
+}
+
+.window__rule {
+  flex: 0 0 auto;
+  width: clamp(2rem, 3.5vw, 3.25rem);
+  height: 1px;
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+
+/* Справа линия уходит за текст, иначе она смотрит в пустоту. */
+.window--top-right .window__caption,
+.window--bottom-right .window__caption {
+  flex-direction: row-reverse;
+}
+
+/* Одиночная строка должна расти из своего центра, а не из левого края. */
+.window__caption .band-text--depth {
+  transform-origin: center;
+}
+
+@media (max-width: 720px) {
+  .window {
+    min-height: 62vh;
+    padding-top: 6rem;
+    padding-bottom: 4rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .window__caption {
+    --k: 1;
+    transition: none;
+  }
+}

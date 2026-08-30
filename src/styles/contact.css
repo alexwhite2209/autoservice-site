@@ -1,0 +1,90 @@
+.contact {
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+  padding-block: clamp(6rem, 10vw, 12rem);
+}
+
+/*
+ * Мягкая виньетка вместо плотного фона: сквозь неё видно финал фильма,
+ * а телефон и заголовок остаются читаемыми.
+ */
+.contact::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 78% 74% at 50% 52%,
+    rgba(6, 6, 6, 0.82) 0%,
+    rgba(6, 6, 6, 0.6) 58%,
+    rgba(6, 6, 6, 0.24) 100%
+  );
+}
+
+.contact__inner {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  justify-items: center;
+}
+
+.contact .section__kicker {
+  justify-content: center;
+}
+
+.contact__title {
+  margin-bottom: var(--space-4);
+}
+
+.contact__lead {
+  font-size: var(--fs-lead);
+  line-height: 1.45;
+  color: var(--text-secondary);
+  margin-bottom: clamp(3rem, 6vw, 5rem);
+}
+
+.contact__action {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-2);
+}
+
+.contact__invite {
+  font-family: var(--font-mono);
+  font-size: var(--fs-mono);
+  letter-spacing: 0.24em;
+  color: var(--accent);
+}
+
+.contact__phone {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: var(--fs-phone);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  transition: color var(--dur) var(--ease-out),
+    text-shadow var(--dur) var(--ease-out);
+}
+
+.contact__phone:hover,
+.contact__phone:focus-visible {
+  color: var(--accent);
+  text-shadow: 0 0 44px var(--accent-glow);
+}
+
+.contact__hours {
+  margin-top: var(--space-2);
+  font-size: var(--fs-body);
+  color: var(--text-secondary);
+}
+
+@media (max-width: 560px) {
+  .contact__phone {
+    /* Длинный номер не должен уезжать за край на узком экране. */
+    white-space: normal;
+    letter-spacing: -0.01em;
+  }
+}

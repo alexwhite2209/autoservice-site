@@ -1,0 +1,358 @@
+.tcar__head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: clamp(1.5rem, 4vw, 5rem);
+  align-items: end;
+  margin-bottom: clamp(2.5rem, 5vw, 4.5rem);
+}
+
+.tcar__head .section__kicker {
+  grid-column: 1 / -1;
+}
+
+.tcar__lead {
+  padding-bottom: 0.5rem;
+}
+
+.tcar__stage {
+  position: relative;
+}
+
+/* ---------- кадр ---------- */
+
+/*
+ * Кадр показывается целиком, без обрезки: точки узлов заданы в процентах
+ * от самого изображения, и любое кадрирование увело бы их с деталей.
+ * Фото 16:9, поэтому ограничение по ширине шире, чем у прежнего
+ * портретного кадра, — иначе подписи по бокам становятся слишком узкими.
+ */
+.tcar__figure {
+  position: relative;
+  margin-inline: auto;
+  max-width: min(100%, 74rem);
+  overflow: hidden;
+  background: var(--panel);
+  border: 1px solid var(--hairline);
+}
+
+.tcar__photo {
+  width: 100%;
+  display: block;
+  /* Лёгкая техническая обработка: кадр уходит в графику, а не остаётся
+     обычным фото. Красное на суппортах при этом сохраняется. */
+  filter: saturate(0.72) contrast(1.08) brightness(0.94);
+}
+
+/* Виньетка прижимает края, чтобы подписи по углам читались. */
+.tcar__figure::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 82% 78% at 50% 50%,
+    rgba(8, 8, 8, 0) 38%,
+    rgba(8, 8, 8, 0.72) 100%
+  );
+}
+
+.tcar__scan {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 14%;
+  pointer-events: none;
+  /*
+   * Градиент обязан идти поперёк полосы, то есть строго по горизонтали.
+   * При наклонной оси на узком высоком элементе он почти не успевает
+   * погаснуть по бокам, и вместо мягкого прохода света получается
+   * прямоугольник с жёсткими вертикальными краями.
+   */
+  background: linear-gradient(
+    90deg,
+    rgba(255, 43, 26, 0) 0%,
+    rgba(255, 43, 26, 0.1) 50%,
+    rgba(255, 43, 26, 0) 100%
+  );
+  opacity: 0;
+}
+
+.reveal.in .tcar__scan {
+  animation: tcar-scan 11s var(--ease-in-out) -3s infinite;
+}
+
+@keyframes tcar-scan {
+  0% {
+    transform: translateX(-10%);
+    opacity: 0;
+  }
+  16%,
+  80% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(715%);
+    opacity: 0;
+  }
+}
+
+/* ---------- выноски ---------- */
+
+.tcar__leaders {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.tcar__leader {
+  fill: none;
+  stroke: var(--accent-line);
+  stroke-width: 1;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 900ms var(--ease-out);
+  transition-delay: calc(700ms + var(--i) * 150ms);
+}
+
+.reveal.in .tcar__leader {
+  stroke-dashoffset: 0;
+}
+
+/* ---------- точки и подписи ---------- */
+
+.tcar__overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.tcar__point {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 0;
+  height: 0;
+}
+
+.tcar__dot {
+  position: absolute;
+  left: -5px;
+  top: -5px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+  /* Тёмный ободок: без него точка теряется на красном суппорте
+     и на любом другом красном узле будущей фотографии. */
+  box-shadow: 0 0 0 2px rgba(8, 8, 8, 0.6);
+  opacity: 0;
+  transform: scale(0.3);
+  transition: opacity var(--dur) var(--ease-out), transform var(--dur) var(--ease-out);
+  transition-delay: calc(1250ms + var(--i) * 170ms);
+}
+
+.reveal.in .tcar__dot {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Свечение отдельным слоем: анимируется только прозрачность. */
+.tcar__halo {
+  position: absolute;
+  left: -16px;
+  top: -16px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--accent) 0%, rgba(255, 43, 26, 0) 68%);
+  opacity: 0;
+}
+
+.reveal.in .tcar__halo {
+  animation: tcar-halo 3.4s var(--ease-in-out) infinite;
+  animation-delay: calc(1450ms + var(--i) * 170ms);
+}
+
+@keyframes tcar-halo {
+  0%,
+  100% {
+    opacity: 0.12;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 0.34;
+    transform: scale(1.25);
+  }
+}
+
+.tcar__label {
+  position: absolute;
+  transform: translateY(-50%);
+  max-width: 15rem;
+  opacity: 0;
+  transition: opacity var(--dur-slow) var(--ease-out);
+  transition-delay: calc(1500ms + var(--i) * 170ms);
+  text-shadow: 0 1px 3px rgba(4, 4, 4, 0.9), 0 6px 22px rgba(4, 4, 4, 0.75);
+}
+
+.reveal.in .tcar__label {
+  opacity: 1;
+}
+
+.tcar__label--left {
+  text-align: right;
+  padding-right: 0.625rem;
+}
+
+.tcar__label--right {
+  text-align: left;
+  padding-left: 0.625rem;
+}
+
+.tcar__label-title {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(0.9375rem, 0.7rem + 0.5vw, 1.1875rem);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.tcar__label-desc {
+  display: block;
+  margin-top: 0.1875rem;
+  font-size: clamp(0.75rem, 0.62rem + 0.28vw, 0.875rem);
+  line-height: 1.35;
+  color: var(--text-secondary);
+}
+
+/* ---------- список-легенда ---------- */
+
+.tcar__legend {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3) var(--space-4);
+  margin-top: var(--space-5);
+}
+
+.tcar__legend-item {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.tcar__legend-dot {
+  flex: 0 0 auto;
+  width: 7px;
+  height: 7px;
+  margin-top: 0.5rem;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+
+.tcar__legend-text {
+  display: grid;
+  gap: 0.125rem;
+}
+
+.tcar__legend-title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1rem;
+  letter-spacing: 0.02em;
+  text-shadow: var(--tshadow);
+}
+
+.tcar__legend-desc {
+  color: var(--text-secondary);
+  font-size: 0.9375rem;
+  line-height: 1.45;
+  text-shadow: var(--tshadow);
+}
+
+/* Выше 1100px подписи живут на кадре, список нужен только читалкам. */
+@media (min-width: 1101px) {
+  .tcar__legend {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+/* Ниже 1100px подписи на кадре стали бы нечитаемо мелкими: они уходят
+   в список под фотографией, а точки на узлах остаются. */
+@media (max-width: 1100px) {
+  .tcar__label,
+  .tcar__leaders {
+    display: none;
+  }
+
+  .tcar__head {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* На маленьком кадре те же десять пикселей читаются как жирные кляксы. */
+@media (max-width: 700px) {
+  .tcar__dot {
+    left: -4px;
+    top: -4px;
+    width: 8px;
+    height: 8px;
+    box-shadow: 0 0 0 1.5px rgba(8, 8, 8, 0.6);
+  }
+
+  .tcar__halo {
+    left: -12px;
+    top: -12px;
+    width: 24px;
+    height: 24px;
+  }
+}
+
+@media (max-width: 620px) {
+  .tcar__legend {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tcar__leader {
+    stroke-dashoffset: 0;
+    transition: none;
+  }
+
+  /* Трансформации здесь не сбрасываются вслепую: они не анимация,
+     а способ позиционирования. Снести их значит уронить подписи. */
+  .tcar__dot {
+    opacity: 1;
+    transform: scale(1);
+    transition: none;
+  }
+
+  .tcar__label {
+    opacity: 1;
+    transform: translateY(-50%);
+    transition: none;
+  }
+
+  .tcar__scan {
+    display: none;
+  }
+
+  .reveal.in .tcar__halo {
+    animation: none;
+    opacity: 0.22;
+  }
+}
