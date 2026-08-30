@@ -6,12 +6,26 @@
  */
 
 /**
- * Логотип. Файл logo-mark.webp получен из исходного LOGO.png: чёрный фон
- * убран в прозрачность, поля обрезаны. Поэтому знак одинаково ложится и
- * на тёмную шапку, и на кадр видео.
+ * Базовый путь для статических файлов.
+ *
+ * Локально:
+ *   /assets/
+ *
+ * GitHub Pages:
+ *   /autoservice-site/assets/
+ *
+ * Благодаря BASE_URL сайт одинаково работает и локально,
+ * и на GitHub Pages.
+ */
+const ASSETS = `${import.meta.env.BASE_URL}assets/`;
+
+/**
+ * Логотип.
+ * Файл logo-mark.webp получен из исходного LOGO.png: чёрный фон
+ * убран в прозрачность, поля обрезаны.
  */
 export const BRAND = {
-  logoSrc: '/assets/logo-mark.webp',
+  logoSrc: `${ASSETS}logo-mark.webp`,
   logoWidth: 900,
   logoHeight: 279,
   logoLabel: '[ ЛОГОТИП ]',
@@ -54,25 +68,25 @@ export const SERVICES = [
     num: '01',
     title: 'ДИАГНОСТИКА',
     description: 'Точная проверка всех систем автомобиля',
-    image: '/assets/service-diagnostics.webp',
+    image: `${ASSETS}service-diagnostics.webp`,
   },
   {
     num: '02',
     title: 'ДВИГАТЕЛЬ',
     description: 'Ремонт и обслуживание двигателей',
-    image: '/assets/service-engine.webp',
+    image: `${ASSETS}service-engine.webp`,
   },
   {
     num: '03',
     title: 'ХОДОВАЯ',
     description: 'Ремонт подвески и рулевого управления',
-    image: '/assets/service-suspension.webp',
+    image: `${ASSETS}service-suspension.webp`,
   },
   {
     num: '04',
     title: 'ТОРМОЗНАЯ СИСТЕМА',
     description: 'Диагностика и ремонт тормозной системы',
-    image: '/assets/service-brakes.webp',
+    image: `${ASSETS}service-brakes.webp`,
   },
 ];
 
@@ -84,12 +98,13 @@ export const SERVICES = [
  *
  * point — где сидит красная точка на машине
  * elbow — излом выноски
- * edge  — куда приходит линия и где начинается подпись
- * side  — с какой стороны кадра живёт подпись
+ * edge — куда приходит линия и где начинается подпись
+ * side — с какой стороны кадра живёт подпись
  *
  * При замене фотографии меняются только эти координаты.
  */
-/*
+
+/**
  * Последний отрезок каждой выноски намеренно вертикальный: линия входит
  * в подпись сверху или снизу и не пересекает её текст.
  */
@@ -136,19 +151,21 @@ export const CAR_HOTSPOTS = [
   },
 ];
 
-/** Медиа. Пути меняются здесь, компоненты их не знают. */
+/** Медиа. Пути автоматически учитывают GitHub Pages. */
 export const MEDIA = {
-  heroVideo: '/assets/hero-scrub.mp4',
-  heroPoster: '/assets/hero-poster.webp',
-  heroEnding: '/assets/hero-ending.webp',
-  // Реальный размер файла в байтах. Запасной вариант, когда сервер
-  // не отдаёт Content-Length: без него кольцо загрузки врёт.
+  heroVideo: `${ASSETS}hero-scrub.mp4`,
+  heroPoster: `${ASSETS}hero-poster.webp`,
+  heroEnding: `${ASSETS}hero-ending.webp`,
+
+  // Реальный размер файла в байтах.
+  // Запасной вариант, когда сервер не отдаёт Content-Length.
   heroVideoBytes: 7382544,
-  // Фотография для секции «Видим главное». Меняется здесь; после замены
-  // подгоните координаты точек в CAR_HOTSPOTS под новый кадр.
-  technicalCar: '/assets/technical-car.webp',
-  compareBefore: '/assets/before.webp',
-  compareAfter: '/assets/after.webp',
+
+  // Фотография для секции «Видим главное».
+  technicalCar: `${ASSETS}technical-car.webp`,
+
+  compareBefore: `${ASSETS}before.webp`,
+  compareAfter: `${ASSETS}after.webp`,
 };
 
 /** Главный слоган первого экрана. Меняться не должен. */
@@ -162,12 +179,7 @@ export const HERO_SLOGAN = {
  * Реплики в окнах между секциями.
  *
  * Окно — это участок страницы, где содержимого нет и фильм виден целиком.
- * Каждая реплика стоит там, где фильм показывает нужный момент: страница
- * гонит видео вперёд до середины и обратно до конца, поэтому вторая пара
- * реплик приходится на обратный ход, когда машина снова собирается.
- *
- * anchor — угол кадра. Углы намеренно разные, чтобы взгляд не залипал.
- * Затемнения под текстом нет: читаемость держится тенью вокруг букв.
+ * Каждая реплика стоит там, где фильм показывает нужный момент.
  */
 export const FILM_CAPTIONS = [
   {
