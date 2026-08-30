@@ -7,7 +7,14 @@ gsap.registerPlugin(ScrollTrigger);
 const SMOOTHING = 0.16;
 const RING_LENGTH = 126;
 
-const MOBILE_SHEETS = 12;
+/*
+ * Мобильная версия:
+ *
+ * 24 sprite sheets
+ * × 10 кадров в каждом
+ * = 240 кадров
+ */
+const MOBILE_SHEETS = 24;
 const FRAMES_PER_SHEET = 10;
 const TOTAL_FRAMES =
   MOBILE_SHEETS * FRAMES_PER_SHEET;
@@ -27,6 +34,10 @@ const isMobileScrub = () => {
 
 /**
  * Прогресс страницы → время видео.
+ *
+ * 0% страницы   → начало видео
+ * 50% страницы  → конец видео
+ * 100% страницы → снова начало видео
  */
 export const filmTime = (progress, duration) =>
   progress <= 0.5
@@ -34,7 +45,14 @@ export const filmTime = (progress, duration) =>
     : (1 - progress) * 2 * duration;
 
 /**
- * Прогресс страницы → кадр мобильного спрайта.
+ * Прогресс страницы → номер мобильного кадра.
+ *
+ * 0   → кадр 0
+ * 0.5 → кадр 120
+ * 1   → кадр 239
+ *
+ * В мобильном режиме используем всю последовательность
+ * из 240 кадров.
  */
 const frameFromProgress = (progress) => {
   const frame = Math.round(
@@ -52,6 +70,11 @@ const frameFromProgress = (progress) => {
 
 /**
  * URL мобильного sprite sheet.
+ *
+ * sheet_00.webp
+ * sheet_01.webp
+ * ...
+ * sheet_23.webp
  */
 const sheetUrl = (sheetIndex) => {
   const number = String(sheetIndex).padStart(2, '0');
@@ -60,13 +83,22 @@ const sheetUrl = (sheetIndex) => {
 };
 
 /**
- * Устанавливает конкретный кадр внутри sprite sheet.
+ * Показывает конкретный кадр мобильной версии.
  *
- * Каждый sheet:
+ * Каждый sprite:
+ *
+ * 1280 × 1800
+ *
+ * Внутри:
  *
  * 2 колонки
  * 5 рядов
  * 10 кадров
+ *
+ * Один кадр:
+ *
+ * 640 × 360
+ * = 16:9
  */
 const showMobileFrame = (element, frame) => {
   if (!element) return;
@@ -86,6 +118,10 @@ const showMobileFrame = (element, frame) => {
 
   const url = sheetUrl(sheetIndex);
 
+  /*
+   * Меняем background-image только когда
+   * переходим на другой sprite.
+   */
   if (
     element.dataset.sheet !==
     String(sheetIndex)
@@ -98,25 +134,38 @@ const showMobileFrame = (element, frame) => {
   }
 
   /*
-   * Каждый кадр: 640×360 = 16:9.
-   * Sprite: 1280×1800 = 2×5 кадров.
+   * Sprite масштабируется по высоте:
    *
-   * Масштабируем sprite по высоте.
-   * На вертикальном телефоне лишнее
-   * по бокам автоматически обрезается.
+   * 5 × высота экрана.
+   *
+   * Поэтому каждый кадр остаётся 16:9.
    */
 
-  const viewportWidth = window.innerWidth;
-  const viewportHeight = window.innerHeight;
+  const viewportWidth =
+    window.innerWidth;
 
+  const viewportHeight =
+    window.innerHeight;
+
+  /*
+   * Реальная ширина sprite после масштабирования.
+   */
   const spriteWidth =
     (1280 / 1800 * 5 * viewportHeight) /
     viewportWidth;
 
+  /*
+   * Реальная ширина одного кадра
+   * относительно ширины viewport.
+   */
   const frameWidth =
     (640 / 1800 * 5 * viewportHeight) /
     viewportWidth;
 
+  /*
+   * Центрируем выбранный кадр
+   * относительно экрана.
+   */
   let x = 50;
 
   if (spriteWidth > 1) {
@@ -131,11 +180,21 @@ const showMobileFrame = (element, frame) => {
       100;
   }
 
+  /*
+   * Пять рядов:
+   *
+   * 0%
+   * 25%
+   * 50%
+   * 75%
+   * 100%
+   */
   const y = row * 25;
 
   element.style.backgroundPosition =
     `${x}% ${y}%`;
 };
+
 export function useFilmScrub({
   enabled,
   stageRef,
@@ -147,16 +206,26 @@ export function useFilmScrub({
   onProgress,
 }) {
   const progressCb = useRef(onProgress);
+
   progressCb.current = onProgress;
 
   useEffect(() => {
-    if (!enabled) return undefined;
+    if (!enabled) {
+      return undefined;
+    }
 
-    const stage = stageRef.current;
-    const video = videoRef.current;
-    const frame = frameRef.current;
+    const stage =
+      stageRef.current;
 
-    if (!stage) return undefined;
+    const video =
+      videoRef.current;
+
+    const frame =
+      frameRef.current;
+
+    if (!stage) {
+      return undefined;
+    }
 
     const mobile =
       isMobileScrub();
@@ -177,17 +246,17 @@ export function useFilmScrub({
       const images = [];
 
       /*
-       * Загружаем ВСЕ 12 sprite sheets сразу.
+       * Загружаем ВСЕ 24 sprite sheets.
        *
-       * Каждый лист содержит 10 готовых кадров.
-       *
-       * Всего 2.4 МБ — для мобильного это намного легче,
-       * чем постоянный seek H.264.
+       * 24 × 10 = 240 кадров.
        */
-
       let loaded = 0;
 
       const handleSheetLoaded = () => {
+        if (disposed) {
+          return;
+        }
+
         loaded += 1;
 
         const fraction =
@@ -208,9 +277,12 @@ export function useFilmScrub({
           );
         }
 
+        /*
+         * Когда загрузились все 24 спрайта,
+         * показываем мобильный слой.
+         */
         if (
-          loaded === MOBILE_SHEETS &&
-          !disposed
+          loaded === MOBILE_SHEETS
         ) {
           stage.classList.add(
             'is-video-ready'
@@ -223,12 +295,16 @@ export function useFilmScrub({
         }
       };
 
+      /*
+       * Предзагрузка всех спрайтов.
+       */
       for (
         let i = 0;
         i < MOBILE_SHEETS;
         i += 1
       ) {
-        const image = new Image();
+        const image =
+          new Image();
 
         image.onload =
           handleSheetLoaded;
@@ -243,18 +319,27 @@ export function useFilmScrub({
       }
 
       /*
-       * Первоначальный кадр.
+       * Первый кадр показываем сразу.
        */
-      showMobileFrame(frame, 0);
+      showMobileFrame(
+        frame,
+        0
+      );
 
+      /*
+       * Плавное движение по кадрам.
+       */
       const tickMobile = (now) => {
-        if (disposed) return;
+        if (disposed) {
+          return;
+        }
 
-        const dt = Math.min(
-          100,
-          now -
-            (lastTick || now)
-        );
+        const dt =
+          Math.min(
+            100,
+            now -
+              (lastTick || now)
+          );
 
         lastTick = now;
 
@@ -283,6 +368,10 @@ export function useFilmScrub({
             );
         }
 
+        /*
+         * Показываем соответствующий
+         * кадр из 240 кадров.
+         */
         showMobileFrame(
           frame,
           frameFromProgress(
@@ -307,6 +396,9 @@ export function useFilmScrub({
         }
       };
 
+      /*
+       * Следим за прокруткой всей страницы.
+       */
       const trigger =
         ScrollTrigger.create({
           trigger:
@@ -366,7 +458,9 @@ export function useFilmScrub({
       const ring =
         ringRef.current;
 
-      if (!ring) return;
+      if (!ring) {
+        return;
+      }
 
       ring.style.setProperty(
         '--ring-offset',
@@ -379,6 +473,9 @@ export function useFilmScrub({
       );
     };
 
+    /*
+     * Перемотка десктопного видео.
+     */
     const seekVideo = (time) => {
       if (
         disposed ||
@@ -419,18 +516,29 @@ export function useFilmScrub({
             clamped;
         }
       } catch {
-        // Мобильный режим сюда не попадает.
+        /*
+         * Ничего.
+         *
+         * На мобильном этот код
+         * вообще не используется.
+         */
       }
     };
 
+    /*
+     * Плавное движение десктопного видео.
+     */
     const tick = (now) => {
-      if (disposed) return;
+      if (disposed) {
+        return;
+      }
 
-      const dt = Math.min(
-        100,
-        now -
-          (lastTick || now)
-      );
+      const dt =
+        Math.min(
+          100,
+          now -
+            (lastTick || now)
+        );
 
       lastTick = now;
 
@@ -483,6 +591,9 @@ export function useFilmScrub({
       }
     };
 
+    /*
+     * ScrollTrigger для desktop.
+     */
     const trigger =
       ScrollTrigger.create({
         trigger:
@@ -500,9 +611,14 @@ export function useFilmScrub({
         },
       });
 
+    /*
+     * Метаданные видео готовы.
+     */
     const handleLoadedMetadata =
       () => {
-        if (disposed) return;
+        if (disposed) {
+          return;
+        }
 
         metadataReady = true;
 
@@ -514,8 +630,13 @@ export function useFilmScrub({
         );
       };
 
+    /*
+     * Видео можно отображать.
+     */
     const handleCanPlay = () => {
-      if (disposed) return;
+      if (disposed) {
+        return;
+      }
 
       stage.classList.add(
         'is-video-ready'
@@ -524,8 +645,13 @@ export function useFilmScrub({
       setRing(1);
     };
 
+    /*
+     * Обновляем индикатор загрузки.
+     */
     const handleProgress = () => {
-      if (disposed) return;
+      if (disposed) {
+        return;
+      }
 
       try {
         if (
@@ -550,6 +676,9 @@ export function useFilmScrub({
       }
     };
 
+    /*
+     * Ошибка видео.
+     */
     const handleError = () => {
       metadataReady = false;
 
@@ -562,6 +691,9 @@ export function useFilmScrub({
       );
     };
 
+    /*
+     * Desktop video.
+     */
     video.preload = 'auto';
     video.muted = true;
     video.playsInline = true;
@@ -628,7 +760,11 @@ export function useFilmScrub({
       );
 
       video.pause();
-      video.removeAttribute('src');
+
+      video.removeAttribute(
+        'src'
+      );
+
       video.load();
 
       stage.classList.remove(
