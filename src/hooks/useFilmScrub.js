@@ -4,14 +4,29 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 gsap.registerPlugin(ScrollTrigger);
 
-/** Сглаживание движения видео за кадр. */
 const SMOOTHING = 0.16;
-
-/** Длина окружности кольца загрузки: r=20 → 2πr ≈ 126. */
 const RING_LENGTH = 126;
 
+const MOBILE_SHEETS = 12;
+const FRAMES_PER_SHEET = 10;
+const TOTAL_FRAMES =
+  MOBILE_SHEETS * FRAMES_PER_SHEET;
+
+const isMobileScrub = () => {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  return (
+    window.matchMedia('(max-width: 720px)').matches ||
+    window.matchMedia(
+      '(orientation: portrait) and (pointer: coarse)'
+    ).matches
+  );
+};
+
 /**
- * Прогресс страницы → время видео, «туда и обратно».
+ * Прогресс страницы → время видео.
  */
 export const filmTime = (progress, duration) =>
   progress <= 0.5
@@ -19,22 +34,106 @@ export const filmTime = (progress, duration) =>
     : (1 - progress) * 2 * duration;
 
 /**
- * Связывает прокрутку страницы с временем видео.
- *
- * Видео загружается напрямую браузером, без fetch → Blob.
- * Это особенно важно для мобильных браузеров.
- *
- * Скролл управляет currentTime.
- * Само видео никогда не проигрывается автоматически.
+ * Прогресс страницы → кадр мобильного спрайта.
  */
+const frameFromProgress = (progress) => {
+  const frame = Math.round(
+    progress * (TOTAL_FRAMES - 1)
+  );
+
+  return Math.max(
+    0,
+    Math.min(
+      TOTAL_FRAMES - 1,
+      frame
+    )
+  );
+};
+
+/**
+ * URL мобильного sprite sheet.
+ */
+const sheetUrl = (sheetIndex) => {
+  const number = String(sheetIndex).padStart(2, '0');
+
+  return `${import.meta.env.BASE_URL}assets/mobile-scrub/sheet_${number}.webp`;
+};
+
+/**
+ * Устанавливает конкретный кадр внутри sprite sheet.
+ *
+ * Каждый sheet:
+ *
+ * 2 колонки
+ * 5 рядов
+ * 10 кадров
+ */
+const showMobileFrame = (
+  element,
+  frame
+) => {
+  if (!element) return;
+
+  const sheetIndex = Math.floor(
+    frame / FRAMES_PER_SHEET
+  );
+
+  const localFrame =
+    frame % FRAMES_PER_SHEET;
+
+  const column =
+    localFrame % 2;
+
+  const row =
+    Math.floor(localFrame / 2);
+
+  /*
+   * Для background-size: 200% 500%
+   * позиции колонок:
+   *
+   * 0 → 0%
+   * 1 → 100%
+   *
+   * Рядов:
+   *
+   * 0 → 0%
+   * 1 → 25%
+   * 2 → 50%
+   * 3 → 75%
+   * 4 → 100%
+   */
+
+  const x =
+    column === 0 ? 0 : 100;
+
+  const y =
+    row * 25;
+
+  const url = sheetUrl(sheetIndex);
+
+  if (
+    element.dataset.sheet !==
+    String(sheetIndex)
+  ) {
+    element.style.backgroundImage =
+      `url("${url}")`;
+
+    element.dataset.sheet =
+      String(sheetIndex);
+  }
+
+  element.style.backgroundPosition =
+    `${x}% ${y}%`;
+};
+
 export function useFilmScrub({
   enabled,
   stageRef,
   videoRef,
+  frameRef,
   ringRef,
   src,
   poster,
-  bytes,
   onProgress,
 }) {
   const progressCb = useRef(onProgress);
@@ -45,8 +144,12 @@ export function useFilmScrub({
 
     const stage = stageRef.current;
     const video = videoRef.current;
+    const frame = frameRef.current;
 
-    if (!stage || !video) return undefined;
+    if (!stage) return undefined;
+
+    const mobile =
+      isMobileScrub();
 
     let disposed = false;
 
@@ -56,85 +159,267 @@ export function useFilmScrub({
     let rafId = null;
     let lastTick = 0;
 
+    /* =====================================================
+       MOBILE
+       ===================================================== */
+
+    if (mobile && frame) {
+      const images = [];
+
+      /*
+       * Загружаем ВСЕ 12 sprite sheets сразу.
+       *
+       * Каждый лист содержит 10 готовых кадров.
+       *
+       * Всего 2.4 МБ — для мобильного это намного легче,
+       * чем постоянный seek H.264.
+       */
+
+      let loaded = 0;
+
+      const handleSheetLoaded = () => {
+        loaded += 1;
+
+        const fraction =
+          loaded / MOBILE_SHEETS;
+
+        const ring =
+          ringRef.current;
+
+        if (ring) {
+          ring.style.setProperty(
+            '--ring-offset',
+            String(
+              Math.round(
+                RING_LENGTH *
+                  (1 - fraction)
+              )
+            )
+          );
+        }
+
+        if (
+          loaded === MOBILE_SHEETS &&
+          !disposed
+        ) {
+          stage.classList.add(
+            'is-video-ready'
+          );
+
+          showMobileFrame(
+            frame,
+            frameFromProgress(target)
+          );
+        }
+      };
+
+      for (
+        let i = 0;
+        i < MOBILE_SHEETS;
+        i += 1
+      ) {
+        const image = new Image();
+
+        image.onload =
+          handleSheetLoaded;
+
+        image.onerror =
+          handleSheetLoaded;
+
+        image.src =
+          sheetUrl(i);
+
+        images.push(image);
+      }
+
+      /*
+       * Первоначальный кадр.
+       */
+      showMobileFrame(frame, 0);
+
+      const tickMobile = (now) => {
+        if (disposed) return;
+
+        const dt = Math.min(
+          100,
+          now -
+            (lastTick || now)
+        );
+
+        lastTick = now;
+
+        const smoothing =
+          1 -
+          (1 - SMOOTHING) **
+            (dt / 16.667);
+
+        shown +=
+          (target - shown) *
+          smoothing;
+
+        if (
+          Math.abs(
+            target - shown
+          ) < 0.0005
+        ) {
+          shown = target;
+
+          rafId = null;
+          lastTick = 0;
+        } else {
+          rafId =
+            requestAnimationFrame(
+              tickMobile
+            );
+        }
+
+        showMobileFrame(
+          frame,
+          frameFromProgress(
+            shown
+          )
+        );
+
+        progressCb.current?.(
+          shown
+        );
+      };
+
+      const kickMobile = () => {
+        if (
+          rafId === null &&
+          !disposed
+        ) {
+          rafId =
+            requestAnimationFrame(
+              tickMobile
+            );
+        }
+      };
+
+      const trigger =
+        ScrollTrigger.create({
+          trigger:
+            document.documentElement,
+
+          start: 'top top',
+
+          end: 'bottom bottom',
+
+          onUpdate: (self) => {
+            target =
+              self.progress;
+
+            kickMobile();
+          },
+        });
+
+      progressCb.current?.(0);
+
+      return () => {
+        disposed = true;
+
+        if (rafId !== null) {
+          cancelAnimationFrame(
+            rafId
+          );
+        }
+
+        trigger.kill();
+
+        images.forEach(
+          (image) => {
+            image.onload = null;
+            image.onerror = null;
+            image.src = '';
+          }
+        );
+
+        stage.classList.remove(
+          'is-video-ready',
+          'is-video-failed'
+        );
+      };
+    }
+
+    /* =====================================================
+       DESKTOP
+       ===================================================== */
+
+    if (!video) {
+      return undefined;
+    }
+
     let metadataReady = false;
 
-    /* -------------------------------------------------
-       ПРОГРЕСС КОЛЬЦА
-    ------------------------------------------------- */
-
     const setRing = (fraction) => {
-      const ring = ringRef.current;
+      const ring =
+        ringRef.current;
 
       if (!ring) return;
-
-      const safeFraction = Math.max(0, Math.min(1, fraction));
 
       ring.style.setProperty(
         '--ring-offset',
         String(
           Math.round(
-            RING_LENGTH * (1 - safeFraction)
+            RING_LENGTH *
+              (1 - fraction)
           )
         )
       );
     };
 
-    /* -------------------------------------------------
-       ОШИБКА ВИДЕО
-    ------------------------------------------------- */
-
-    const failVideo = () => {
-      if (disposed) return;
-
-      stage.classList.remove('is-video-ready');
-      stage.classList.add('is-video-failed');
-    };
-
-    /* -------------------------------------------------
-       ПЕРЕМОТКА
-    ------------------------------------------------- */
-
     const seekVideo = (time) => {
-      if (disposed || !metadataReady) return;
-
-      const duration = video.duration;
-
-      if (!Number.isFinite(duration) || duration <= 0) {
+      if (
+        disposed ||
+        !metadataReady
+      ) {
         return;
       }
 
-      const clamped = Math.max(
-        0,
-        Math.min(duration - 0.001, time)
-      );
+      const duration =
+        video.duration;
 
-      /*
-       * Не пытаемся запускать воспроизведение.
-       *
-       * currentTime работает как скраб:
-       * пользователь двигает страницу → меняется кадр.
-       */
+      if (
+        !Number.isFinite(
+          duration
+        ) ||
+        duration <= 0
+      ) {
+        return;
+      }
+
+      const clamped =
+        Math.max(
+          0,
+          Math.min(
+            duration - 0.001,
+            time
+          )
+        );
 
       try {
-        if (Math.abs(video.currentTime - clamped) > 0.003) {
-          video.currentTime = clamped;
+        if (
+          Math.abs(
+            video.currentTime -
+              clamped
+          ) > 0.003
+        ) {
+          video.currentTime =
+            clamped;
         }
       } catch {
-        // Некоторые мобильные браузеры могут временно
-        // отклонить перемотку во время подготовки видео.
+        // Мобильный режим сюда не попадает.
       }
     };
-
-    /* -------------------------------------------------
-       ПЛАВНОЕ ДВИЖЕНИЕ
-    ------------------------------------------------- */
 
     const tick = (now) => {
       if (disposed) return;
 
       const dt = Math.min(
         100,
-        now - (lastTick || now)
+        now -
+          (lastTick || now)
       );
 
       lastTick = now;
@@ -145,11 +430,13 @@ export function useFilmScrub({
           (dt / 16.667);
 
       shown +=
-        (target - shown) * smoothing;
+        (target - shown) *
+        smoothing;
 
       if (
-        Math.abs(target - shown) <
-        0.0005
+        Math.abs(
+          target - shown
+        ) < 0.0005
       ) {
         shown = target;
 
@@ -157,19 +444,21 @@ export function useFilmScrub({
         lastTick = 0;
       } else {
         rafId =
-          requestAnimationFrame(tick);
+          requestAnimationFrame(
+            tick
+          );
       }
 
-      if (metadataReady) {
-        seekVideo(
-          filmTime(
-            shown,
-            video.duration
-          )
-        );
-      }
+      seekVideo(
+        filmTime(
+          shown,
+          video.duration
+        )
+      );
 
-      progressCb.current?.(shown);
+      progressCb.current?.(
+        shown
+      );
     };
 
     const kick = () => {
@@ -178,13 +467,11 @@ export function useFilmScrub({
         !disposed
       ) {
         rafId =
-          requestAnimationFrame(tick);
+          requestAnimationFrame(
+            tick
+          );
       }
     };
-
-    /* -------------------------------------------------
-       SCROLLTRIGGER
-    ------------------------------------------------- */
 
     const trigger =
       ScrollTrigger.create({
@@ -192,37 +479,33 @@ export function useFilmScrub({
           document.documentElement,
 
         start: 'top top',
+
         end: 'bottom bottom',
 
         onUpdate: (self) => {
-          target = self.progress;
+          target =
+            self.progress;
 
           kick();
         },
       });
 
-    /* -------------------------------------------------
-       VIDEO METADATA
-    ------------------------------------------------- */
+    const handleLoadedMetadata =
+      () => {
+        if (disposed) return;
 
-    const handleLoadedMetadata = () => {
+        metadataReady = true;
+
+        seekVideo(
+          filmTime(
+            target,
+            video.duration
+          )
+        );
+      };
+
+    const handleCanPlay = () => {
       if (disposed) return;
-
-      metadataReady = true;
-
-      /*
-       * В этот момент браузер уже знает:
-       * - duration
-       * - размеры видео
-       * - структуру MP4
-       */
-
-      seekVideo(
-        filmTime(
-          target,
-          video.duration
-        )
-      );
 
       stage.classList.add(
         'is-video-ready'
@@ -231,88 +514,50 @@ export function useFilmScrub({
       setRing(1);
     };
 
-    /* -------------------------------------------------
-       VIDEO CANPLAY
-    ------------------------------------------------- */
-
-    const handleCanPlay = () => {
-      if (disposed) return;
-
-      stage.classList.add(
-        'is-video-ready'
-      );
-    };
-
-    /* -------------------------------------------------
-       ПРОГРЕСС ЗАГРУЗКИ
-    ------------------------------------------------- */
-
     const handleProgress = () => {
       if (disposed) return;
-
-      /*
-       * Для прямого video.src браузер сам управляет
-       * загрузкой и Range Requests.
-       *
-       * У некоторых браузеров buffered может быть
-       * доступен сразу, у некоторых — нет.
-       */
 
       try {
         if (
           video.duration &&
           video.buffered.length
         ) {
-          const bufferedEnd =
+          const end =
             video.buffered.end(
               video.buffered.length - 1
             );
 
-          const fraction = Math.min(
-            1,
-            bufferedEnd /
-              video.duration
+          setRing(
+            Math.min(
+              1,
+              end /
+                video.duration
+            )
           );
-
-          setRing(fraction);
         }
       } catch {
-        // Ничего страшного.
-        // Загрузка видео продолжится штатно.
+        // Ничего.
       }
     };
 
-    /* -------------------------------------------------
-       ОШИБКА
-    ------------------------------------------------- */
-
-    const handleVideoError = () => {
+    const handleError = () => {
       metadataReady = false;
-      failVideo();
-    };
 
-    /* -------------------------------------------------
-       НАСТРОЙКА VIDEO
-    ------------------------------------------------- */
+      stage.classList.remove(
+        'is-video-ready'
+      );
+
+      stage.classList.add(
+        'is-video-failed'
+      );
+    };
 
     video.preload = 'auto';
     video.muted = true;
     video.playsInline = true;
 
-    /*
-     * Критически важно:
-     *
-     * НЕ fetch()
-     * НЕ Blob
-     * НЕ createObjectURL()
-     *
-     * Мобильный браузер получает оригинальный MP4
-     * напрямую и сам управляет буферизацией.
-     */
-
     video.src = src;
 
-    /* Poster используется самим video. */
     if (poster) {
       video.poster = poster;
     }
@@ -334,27 +579,20 @@ export function useFilmScrub({
 
     video.addEventListener(
       'error',
-      handleVideoError
+      handleError
     );
 
-    setRing(0);
-
-    progressCb.current?.(0);
-
-    /*
-     * load() запускает загрузку после назначения src.
-     */
     video.load();
 
-    /* -------------------------------------------------
-       CLEANUP
-    ------------------------------------------------- */
+    progressCb.current?.(0);
 
     return () => {
       disposed = true;
 
       if (rafId !== null) {
-        cancelAnimationFrame(rafId);
+        cancelAnimationFrame(
+          rafId
+        );
       }
 
       trigger.kill();
@@ -376,22 +614,12 @@ export function useFilmScrub({
 
       video.removeEventListener(
         'error',
-        handleVideoError
+        handleError
       );
 
       video.pause();
-
-      video.removeAttribute(
-        'src'
-      );
-
-      video.removeAttribute(
-        'poster'
-      );
-
+      video.removeAttribute('src');
       video.load();
-
-      metadataReady = false;
 
       stage.classList.remove(
         'is-video-ready',
@@ -402,9 +630,9 @@ export function useFilmScrub({
     enabled,
     src,
     poster,
-    bytes,
     stageRef,
     videoRef,
+    frameRef,
     ringRef,
   ]);
 }
