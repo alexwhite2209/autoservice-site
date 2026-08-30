@@ -49,7 +49,7 @@ export function FilmBackdrop({ enabled }) {
         <video
           className="film__video"
           ref={videoRef}
-          preload="none"
+          preload="auto"
           muted
           playsInline
           tabIndex={-1}
