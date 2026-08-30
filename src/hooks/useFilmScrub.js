@@ -68,10 +68,7 @@ const sheetUrl = (sheetIndex) => {
  * 5 рядов
  * 10 кадров
  */
-const showMobileFrame = (
-  element,
-  frame
-) => {
+const showMobileFrame = (element, frame) => {
   if (!element) return;
 
   const sheetIndex = Math.floor(
@@ -87,28 +84,6 @@ const showMobileFrame = (
   const row =
     Math.floor(localFrame / 2);
 
-  /*
-   * Для background-size: 200% 500%
-   * позиции колонок:
-   *
-   * 0 → 0%
-   * 1 → 100%
-   *
-   * Рядов:
-   *
-   * 0 → 0%
-   * 1 → 25%
-   * 2 → 50%
-   * 3 → 75%
-   * 4 → 100%
-   */
-
-  const x =
-    column === 0 ? 0 : 100;
-
-  const y =
-    row * 25;
-
   const url = sheetUrl(sheetIndex);
 
   if (
@@ -122,10 +97,45 @@ const showMobileFrame = (
       String(sheetIndex);
   }
 
+  /*
+   * Каждый кадр: 640×360 = 16:9.
+   * Sprite: 1280×1800 = 2×5 кадров.
+   *
+   * Масштабируем sprite по высоте.
+   * На вертикальном телефоне лишнее
+   * по бокам автоматически обрезается.
+   */
+
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+
+  const spriteWidth =
+    (1280 / 1800 * 5 * viewportHeight) /
+    viewportWidth;
+
+  const frameWidth =
+    (640 / 1800 * 5 * viewportHeight) /
+    viewportWidth;
+
+  let x = 50;
+
+  if (spriteWidth > 1) {
+    const frameCenter =
+      column === 0
+        ? frameWidth / 2
+        : spriteWidth - frameWidth / 2;
+
+    x =
+      ((0.5 - frameCenter) /
+        (1 - spriteWidth)) *
+      100;
+  }
+
+  const y = row * 25;
+
   element.style.backgroundPosition =
     `${x}% ${y}%`;
 };
-
 export function useFilmScrub({
   enabled,
   stageRef,

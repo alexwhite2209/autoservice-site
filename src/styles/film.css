@@ -272,20 +272,16 @@
   height: 100%;
 
   background-repeat: no-repeat;
-  background-size: 200% 500%;
-  background-position: 0% 0%;
+  background-size: auto 500%;
+  background-position: 50% 0%;
 
   background-color: var(--canvas);
 
-  will-change: background-image, background-position;
+  will-change: background-position;
+  transform: translateZ(0);
 }
+/* ---------- мобильный режим ---------- */
 
-/*
- * На мобильном вместо H.264-видео используем готовые WebP-кадры.
- * Один sprite:
- *
- * 2 колонки × 5 рядов = 10 кадров.
- */
 @media (max-width: 720px) {
   .film__video {
     display: none;
@@ -308,9 +304,8 @@
   }
 }
 
-/*
- * На планшетах с touch тоже используем кадровый режим.
- */
+/* ---------- планшет portrait ---------- */
+
 @media (orientation: portrait) and (pointer: coarse) {
   .film__video {
     display: none;
