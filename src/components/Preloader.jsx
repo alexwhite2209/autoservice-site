@@ -87,6 +87,14 @@ export function Preloader({ onFinish }) {
 
     document.body.style.overflow = 'hidden';
     window.scrollTo(0, 0);
+    
+    // Параллельно с заставкой заранее прогружаем все мобильные кадры.
+for (let i = 0; i < 24; i += 1) {
+  const number = String(i).padStart(2, '0');
+  const img = new Image();
+
+  img.src = `${import.meta.env.BASE_URL}assets/mobile-scrub/sheet_${number}.webp`;
+}
 
     const unlock = () => {
       document.body.style.overflow =
